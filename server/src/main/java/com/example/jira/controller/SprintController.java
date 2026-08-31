@@ -103,16 +103,41 @@ public class SprintController {
     // ASSIGN ISSUE TO SPRINT
     // =========================
     @PutMapping("/{sprintId}/issues/{issueId}")
-    public Issue addIssueToSprint(
-            @PathVariable String sprintId,
-            @PathVariable String issueId) {
+public Issue addIssueToSprint(
+        @PathVariable String sprintId,
+        @PathVariable String issueId) {
 
-        Issue issue = issueRepository.findById(new ObjectId(issueId))
-                .orElseThrow(() -> new RuntimeException("Issue not found"));
+    Sprint sprint = sprintRepository.findById(
+            new ObjectId(sprintId)
+    ).orElseThrow(() ->
+            new RuntimeException("Sprint not found")
+    );
 
-        issue.setUpdatedAt(Instant.now());
-        issue.setProjectId(sprintId); // OR add sprintId field if you prefer
+    Issue issue = issueRepository.findById(
+            new ObjectId(issueId)
+    ).orElseThrow(() ->
+            new RuntimeException("Issue not found")
+    );
 
-        return issueRepository.save(issue);
+    /*
+     * Make sure the sprint and issue belong
+     * to the same project.
+     */
+    if (!sprint.getProjectId().equals(
+            issue.getProjectId()
+    )) {
+        throw new RuntimeException(
+                "Sprint and issue belong to different projects"
+        );
     }
+
+    /*
+     * Correctly store the sprint ID.
+     */
+    issue.setSprintId(sprintId);
+
+    issue.setUpdatedAt(Instant.now());
+
+    return issueRepository.save(issue);
+}
 }

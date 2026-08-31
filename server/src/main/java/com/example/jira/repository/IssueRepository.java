@@ -9,4 +9,8 @@ import java.util.List;
 public interface IssueRepository extends MongoRepository<Issue, ObjectId> {
 
     List<Issue> findByProjectId(String projectId);
+
+    List<Issue> findByParentIssueId(String parentIssueId);
+
+    List<Issue> findByDependencyIdsContaining(String issueId);
 }
