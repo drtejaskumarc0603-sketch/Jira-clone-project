@@ -13,4 +13,6 @@ public interface IssueRepository extends MongoRepository<Issue, ObjectId> {
     List<Issue> findByParentIssueId(String parentIssueId);
 
     List<Issue> findByDependencyIdsContaining(String issueId);
+
+    List<Issue> findBySprintId(String sprintId);
 }
