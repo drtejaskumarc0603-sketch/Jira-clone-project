@@ -52,11 +52,17 @@ public class Projectcontroller {
                 .orElse(null);
 
         // Fetch members
-        List<ObjectId> memberObjectIds = project.getMemberIds().stream()
-                .map(ObjectId::new)
-                .toList();
+       // Fetch members safely
+List<ObjectId> memberObjectIds =
+        project.getMemberIds() == null
+                ? List.of()
+                : project.getMemberIds().stream()
+                        .map(ObjectId::new)
+                        .toList();
 
-        List<User> members = userRepository.findByIdIn(memberObjectIds);
+List<User> members = userRepository.findByIdIn(memberObjectIds);
+
+     
 
         return new ProjectResponse(
                 project.getId(),
