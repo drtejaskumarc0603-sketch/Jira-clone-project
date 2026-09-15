@@ -4,6 +4,7 @@ import com.example.jira.model.Issue;
 import com.example.jira.model.Sprint;
 import com.example.jira.repository.IssueRepository;
 import com.example.jira.repository.SprintRepository;
+import com.example.jira.service.RealtimeService;
 
 import org.bson.types.ObjectId;
 import org.springframework.http.HttpStatus;
@@ -16,22 +17,26 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+
 @Service
 public class IssueService {
 
     private final IssueRepository issueRepository;
     private final SprintRepository sprintRepository;
     private final NotificationService notificationService;
+    private final RealtimeService realtimeService;
 
     public IssueService(
-            IssueRepository issueRepository,
-            SprintRepository sprintRepository,
-            NotificationService notificationService) {
+        IssueRepository issueRepository,
+        SprintRepository sprintRepository,
+        NotificationService notificationService,
+        RealtimeService realtimeService) {
 
-        this.issueRepository = issueRepository;
-        this.sprintRepository = sprintRepository;
-        this.notificationService = notificationService;
-    }
+    this.issueRepository = issueRepository;
+    this.sprintRepository = sprintRepository;
+    this.notificationService = notificationService;
+    this.realtimeService = realtimeService;
+}
 
     // =========================================================
     // CREATE NORMAL ISSUE
@@ -192,7 +197,15 @@ public class IssueService {
 
         issue.setUpdatedAt(Instant.now());
 
-        Issue saved = issueRepository.save(issue);
+       Issue savedIssue = issueRepository.save(issue);
+
+realtimeService.notifyIssueUpdated(
+        savedIssue.getId(),
+        savedIssue.getAssigneeId(),
+        "Issue updated"
+);
+
+
 
         /*
          * Notify users only when the issue actually changes
@@ -201,11 +214,12 @@ public class IssueService {
         if (!"DONE".equalsIgnoreCase(oldStatus)
                 && "DONE".equalsIgnoreCase(newStatus)) {
 
-            notifyBlockedIssues(saved);
+            notifyBlockedIssues(savedIssue);
         }
 
-        return saved;
+       return savedIssue;
     }
+    
 
     // =========================================================
     // STATUS VALIDATION

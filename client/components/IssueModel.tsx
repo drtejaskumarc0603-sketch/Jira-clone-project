@@ -15,6 +15,13 @@ import { Badge } from "./ui/badge";
 import axiosInstance from "@/lib/Axiosinstance";
 import { useAuth } from "@/lib/AuthContext";
 
+
+import {
+  connectWebSocket,
+  subscribeToIssue,
+  disconnectWebSocket,
+} from "@/lib/websocket";
+
 const priorityLabels: Record<string, string> = {
   HIGH: "High",
   MEDIUM: "Medium",
@@ -156,6 +163,45 @@ const IssueModel = ({ issue, isOpen, onClose }: any) => {
     loadProjectIssues();
   }, [isOpen, localIssue?.id, localIssue?.projectId]);
 
+
+useEffect(() => {
+  if (!issue?.id) return;
+
+  const wsClient = connectWebSocket(() => {
+    subscribeToIssue(issue.id, async (message) => {
+      console.log("REALTIME UPDATE:", message);
+
+      if (
+        message.type === "ISSUE_UPDATED" ||
+        message.type === "COMMENT_ADDED" ||
+        message.type === "STATUS_CHANGED"
+      ) {
+        try {
+          const response = await axiosInstance.get(
+            `/api/issues/${issue.id}`
+          );
+
+          setLocalIssue(response.data);
+
+          // Refresh relationships as well
+          await loadTaskRelationships();
+
+          console.log("Issue refreshed from WebSocket update");
+        } catch (error) {
+          console.error(
+            "Failed to refresh issue after WebSocket update:",
+            error
+          );
+        }
+      }
+    });
+  });
+
+  return () => {
+    wsClient.deactivate();
+    disconnectWebSocket();
+  };
+}, [issue?.id]);
   /*
    * Create a subtask.
    *

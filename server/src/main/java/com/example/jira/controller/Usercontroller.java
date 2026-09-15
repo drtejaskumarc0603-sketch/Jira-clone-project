@@ -1,33 +1,32 @@
 package com.example.jira.controller;
 
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import com.example.jira.dto.ChangePasswordRequest;
+import com.example.jira.dto.UpdateProfileRequest;
 import com.example.jira.model.User;
 import com.example.jira.repository.UserRepository;
+import com.example.jira.service.UserProfileService;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/users")
 public class Usercontroller {
+
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // =========================
-    // SIGNUP
-    // =========================
+    @Autowired
+    private UserProfileService userProfileService;
+
     @PostMapping("/signup")
     public User signup(@RequestBody User user) {
 
@@ -35,69 +34,123 @@ public class Usercontroller {
             throw new RuntimeException("Email already exists");
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole(user.getRole() == null ? "USER" : user.getRole());
+        if (user.getPassword() == null) {
+            throw new RuntimeException("Password is required");
+        }
 
-        return userRepository.save(user);
+        user.setPassword(
+                passwordEncoder.encode(user.getPassword())
+        );
+
+        user.setRole(
+                user.getRole() == null
+                        ? "USER"
+                        : user.getRole()
+        );
+
+        user.setActive(true);
+        user.setEmailVerified(true);
+
+        User saved = userRepository.save(user);
+
+        saved.setPassword(null);
+
+        return saved;
     }
 
-    // =========================
-    // LOGIN
-    // =========================
     @PostMapping("/login")
     public User login(@RequestBody User loginRequest) {
 
-        User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByEmail(
+                loginRequest.getEmail()
+        ).orElseThrow(() ->
+                new RuntimeException("Invalid credentials"));
+
+        if (!user.isActive()) {
+            throw new RuntimeException(
+                    "Account is deactivated");
+        }
 
         if (!passwordEncoder.matches(
                 loginRequest.getPassword(),
                 user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+
+            throw new RuntimeException(
+                    "Invalid credentials");
         }
 
-        return user; // later replace with JWT token
+        user.setPassword(null);
+
+        return user;
     }
 
-    // =========================
-    // GET USER BY ID
-    // =========================
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable String id) {
+    public User getProfile(@PathVariable String id) {
 
-        ObjectId objectId;
-        try {
-            objectId = new ObjectId(id);
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid user id");
-        }
-
-        return userRepository.findById(objectId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        return userProfileService.getProfile(id);
     }
 
-    // =========================
-    // EDIT PROFILE
-    // =========================
     @PutMapping("/{id}")
-    public User editProfile(
+    public User updateProfile(
             @PathVariable String id,
-            @RequestBody User updatedUser) {
+            @RequestBody UpdateProfileRequest request) {
 
-        ObjectId objectId;
-        try {
-            objectId = new ObjectId(id);
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException("Invalid user id");
-        }
+        return userProfileService.updateProfile(
+                id,
+                request
+        );
+    }
+@PostMapping(
+        value = "/{id}/avatar",
+        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+)
+    public User updateProfileImage(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file) {
 
-        User user = userRepository.findById(objectId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        return userProfileService.updateProfileImage(
+                id,
+                file
+        );
+    }
 
-        user.setName(updatedUser.getName());
-        user.setGroup(updatedUser.getGroup());
-        user.setAvatar(updatedUser.getAvatar());
+    @PutMapping("/{id}/password")
+    public String changePassword(
+            @PathVariable String id,
+            @RequestBody ChangePasswordRequest request) {
 
-        return userRepository.save(user);
+        userProfileService.changePassword(
+                id,
+                request
+        );
+
+        return "Password updated successfully";
+    }
+
+    @PutMapping("/{id}/deactivate")
+    public String deactivateAccount(
+            @PathVariable String id) {
+
+        userProfileService.deactivateAccount(id);
+
+        return "Account deactivated successfully";
+    }
+
+    @PutMapping("/{id}/activate")
+    public String activateAccount(
+            @PathVariable String id) {
+
+        userProfileService.activateAccount(id);
+
+        return "Account activated successfully";
+    }
+
+    @GetMapping("/verify-email")
+    public String verifyEmail(
+            @RequestParam String token) {
+
+        userProfileService.verifyEmail(token);
+
+        return "Email verified successfully";
     }
 }

@@ -11,12 +11,17 @@ public class User {
 
     @Id
     private ObjectId id;
+
     private String name;
     private String email;
     private String password;
     private String role;
     private String group;
     private String avatar;
+
+    private boolean active = true;
+    private boolean emailVerified = true;
+
     private Instant createdAt = Instant.now();
 
     public String getId() {
@@ -79,8 +84,23 @@ public class User {
         this.avatar = avatar;
     }
 
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
-
 }
