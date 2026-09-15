@@ -156,8 +156,16 @@ public class IssueService {
             Issue updated) {
 
         Issue issue = findIssue(id);
+        String oldAssigneeId = issue.getAssigneeId();
 
         String oldStatus = issue.getStatus();
+
+int oldCommentCount =
+        issue.getComments() != null
+                ? issue.getComments().size()
+                : 0;
+       
+      
         String newStatus =
                 updated.getStatus() != null
                         ? updated.getStatus()
@@ -198,6 +206,27 @@ public class IssueService {
         issue.setUpdatedAt(Instant.now());
 
        Issue savedIssue = issueRepository.save(issue);
+
+       // Notify assignee when the issue is assigned
+if (issue.getAssigneeId() != null
+        && !issue.getAssigneeId().equals(oldAssigneeId)) {
+
+    notificationService.notifyIssueAssigned(
+            issue.getAssigneeId(),
+            savedIssue
+    );
+}
+
+// Notify assignee when status changes
+if (!oldStatus.equalsIgnoreCase(newStatus)) {
+
+    notificationService.notifyStatusChanged(
+            savedIssue.getAssigneeId(),
+            savedIssue,
+            oldStatus,
+            newStatus
+    );
+}
 
 realtimeService.notifyIssueUpdated(
         savedIssue.getId(),

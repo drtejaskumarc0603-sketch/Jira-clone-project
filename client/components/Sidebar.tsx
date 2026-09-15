@@ -20,6 +20,7 @@ import { Button } from "./ui/button";
 import CreateIssuemodel from "./CreateIssuemodel";
 import { useAuth } from "@/lib/AuthContext";
 import axiosInstance from "@/lib/Axiosinstance";
+import NotificationBell from "@/components/NotificationBell";
 
 const Sidebar = () => {
   const router = useRouter();
@@ -103,6 +104,7 @@ const Sidebar = () => {
         <span className="text-xl font-bold tracking-tight text-[#172B4D]">
           Jira Clone
         </span>
+        <NotificationBell />
       </div>
 
       {/* Project Selector */}

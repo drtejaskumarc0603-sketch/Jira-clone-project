@@ -16,6 +16,25 @@ public class RealtimeService {
         this.messagingTemplate = messagingTemplate;
     }
 
+    public void notifyUser(
+        String userId,
+        String type,
+        String message) {
+
+    RealtimeMessage realtimeMessage =
+            new RealtimeMessage(
+                    type,
+                    null,
+                    userId,
+                    message
+            );
+
+    messagingTemplate.convertAndSend(
+            "/topic/user/" + userId,
+            realtimeMessage
+    );
+}
+
     public void notifyIssueUpdated(
             String issueId,
             String userId,
