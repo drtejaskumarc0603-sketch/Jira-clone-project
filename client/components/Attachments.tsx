@@ -12,6 +12,7 @@ interface Attachment {
   size: number;
   uploadedBy: string;
   uploadedAt: string;
+  fileId: string;
 }
 
 interface AttachmentsProps {
