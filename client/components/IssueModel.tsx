@@ -14,7 +14,7 @@ import { Badge } from "./ui/badge";
 
 import axiosInstance from "@/lib/Axiosinstance";
 import { useAuth } from "@/lib/AuthContext";
-
+import Attachments from "@/components/Attachments";
 
 import {
   connectWebSocket,
@@ -341,6 +341,7 @@ useEffect(() => {
       setLoading(false);
     }
   };
+
 
   /*
    * Save a comment.
@@ -781,6 +782,12 @@ useEffect(() => {
               </div>
 
             </div>
+
+
+
+  {localIssue?.id && (
+  <Attachments issueId={localIssue.id} />
+)}
 
             {/* ========================= */}
             {/* SIDEBAR */}
